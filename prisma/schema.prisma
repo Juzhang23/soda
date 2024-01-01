@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model Restaurant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String
+  phone     String
+  menuItems MenuItem[]
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  menuItems   MenuItem[]
+}
+
+model MenuItem {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  restaurant  Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId Int
+  categories  Category[] // Many-to-many relationship with categories
+  modifiers   Modifier[] // Many-to-many relationship with modifiers
+  orders      OrderItem[]
+}
+
+model Modifier {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  menuItems   MenuItem[] // Many-to-many relationship with menu items
+  orderItems  OrderItem[] @relation("ModifierToOrderItem") // Add the opposite relation field without references
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  username String    @unique
+  email    String    @unique
+  password String
+  orders   Order[]
+}
+
+model Order {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  customer   User      @relation(fields: [customerId], references: [id])
+  customerId Int
+  items      OrderItem[]
+  payment    Payment?
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  quantity   Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId Int
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    Int
+  modifiers  Modifier[] @relation("ModifierToOrderItem") // Add the opposite relation field without references
+}
+
+model Payment {
+  id            Int       @id @default(autoincrement())
+  amount        Float
+  status        String    // You can define different payment status values (e.g., "pending," "completed," "failed")
+  paymentMethod String    // Store information about the payment method (e.g., credit card, cash)
+  orderId       Int @unique
+  order         Order     @relation(fields: [orderId], references: [id])
+}
